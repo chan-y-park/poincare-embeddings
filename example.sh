@@ -2,7 +2,8 @@
 
 # Get number of threads from environment or set to default
 if [ -z "$NTHREADS" ]; then
-   NTHREADS=2
+   #NTHREADS=2
+   NTHREADS=0
 fi
 
 echo "Using $NTHREADS threads"
@@ -17,6 +18,7 @@ python3 embed.py \
        -negs 50 \
        -burnin 20 \
        -nproc "${NTHREADS}" \
+       -ndproc 0 \
        -distfn poincare \
        -dset wordnet/mammal_closure.tsv \
        -fout mammals.pth \

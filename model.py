@@ -123,21 +123,25 @@ class SNEmbedding(Embedding):
         return -dists
 
     def loss(self, preds, targets, weight=None, size_average=True):
+        #self.lossfn = nn.CrossEntropyLoss
         lossfn = self.lossfn(size_average=size_average, weight=weight)
         return lossfn(preds, targets)
 
 
 class GraphDataset(Dataset):
     _ntries = 10
-    _dampening = 1
+    #_dampening = 1
 
     def __init__(self, idx, objects, nnegs, unigram_size=1e8):
+        unigram_size=1e4
+        # idx = edges
+        # objects = id_of_name
         print('Indexing data')
         self.idx = idx
-        self.nnegs = nnegs
+        self.nnegs = nnegs #opt.negs
         self.burnin = False
         self.objects = objects
-        self.max_tries = self.nnegs * self._ntries
+        self.max_tries = self.nnegs * self._ntries #=50 * 10 for mammal
 
         self._weights = ddict(lambda: ddict(int))
         self._counts = np.ones(len(objects), dtype=np.float)
@@ -150,11 +154,11 @@ class GraphDataset(Dataset):
         #assert len(objects) == nents, 'Number of objects do no match'
 
         if unigram_size > 0:
-            c = self._counts ** self._dampening
+            c = self._counts #** self._dampening
             self.unigram_table = choice(
-                len(objects),
-                size=int(unigram_size),
-                p=(c / c.sum())
+                len(objects), # 0<= a[i] <len(objects)
+                size=int(unigram_size), # output shape
+                p=(c / c.sum()) # P of each entry in a
             )
 
     def __len__(self):
@@ -171,9 +175,10 @@ class SNGraphDataset(GraphDataset):
 
     def __getitem__(self, i):
         t, h, _ = np.array(self.idx[i])
+        print(t, h)
         negs = set()
         ntries = 0
-        nnegs = self.nnegs
+        nnegs = self.nnegs #opt.negs
         if self.burnin:
             nnegs *= 0.1
         while ntries < self.max_tries and len(negs) < nnegs:
@@ -190,13 +195,15 @@ class SNGraphDataset(GraphDataset):
         ix = [t, h] + list(negs)
         while len(ix) < nnegs + 2:
             ix.append(ix[randint(2, len(ix))])
-        return th.LongTensor(ix).view(1, len(ix)), th.zeros(1).long()
+        rv = th.LongTensor(ix).view(1, len(ix)), th.zeros(1).long()
+        print(rv)
+        return rv
 
     @classmethod
     def initialize(cls, distfn, opt, idx, objects, max_norm=1):
         conf = []
         model_name = cls.model_name % (opt.dset, opt.distfn, opt.dim)
-        data = cls(idx, objects, opt.negs)
+        data = cls(idx, objects, opt.negs) #negs=20 in example.sh
         model = SNEmbedding(
             len(data.objects),
             opt.dim,

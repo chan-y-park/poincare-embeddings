@@ -120,6 +120,8 @@ if __name__ == '__main__':
         log_level = logging.INFO
     log = logging.getLogger('poincare-nips17')
     logging.basicConfig(level=log_level, format='%(message)s', stream=sys.stdout)
+    # idx = edges
+    # objects = id_of_name
     idx, objects = slurp(opt.dset)
 
     # create adjacency list for evaluation
@@ -156,6 +158,7 @@ if __name__ == '__main__':
     ] + conf
     conf = ', '.join(['"{}": {}'.format(k, f).format(getattr(opt, k)) for k, f in conf])
     log.info(f'json_conf: {{{conf}}}')
+
 
     # initialize optimizer
     optimizer = RiemannianSGD(
