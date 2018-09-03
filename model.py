@@ -175,7 +175,6 @@ class SNGraphDataset(GraphDataset):
 
     def __getitem__(self, i):
         t, h, _ = np.array(self.idx[i])
-        print(t, h)
         negs = set()
         ntries = 0
         nnegs = self.nnegs #opt.negs
@@ -196,7 +195,6 @@ class SNGraphDataset(GraphDataset):
         while len(ix) < nnegs + 2:
             ix.append(ix[randint(2, len(ix))])
         rv = th.LongTensor(ix).view(1, len(ix)), th.zeros(1).long()
-        print(rv)
         return rv
 
     @classmethod
