@@ -122,7 +122,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=log_level, format='%(message)s', stream=sys.stdout)
     # idx = edges
     # objects = id_of_name
-    idx, objects = slurp(opt.dset)
+    idx, objects = slurp(opt.dset, symmetrize=True)
 
     # create adjacency list for evaluation
     adjacency = ddict(set)
@@ -147,6 +147,8 @@ if __name__ == '__main__':
 
     # initialize model and data
     model, data, model_name, conf = model.SNGraphDataset.initialize(distfn, opt, idx, objects)
+    import pdb
+    pdb.set_trace()
 
     # Build config string for log
     conf = [
