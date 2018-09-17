@@ -114,22 +114,18 @@ class Embedding(nn.Module):
 class SNEmbedding(Embedding):
     def __init__(self, size, dim, dist=PoincareDistance, max_norm=1):
         super(SNEmbedding, self).__init__(size, dim, dist, max_norm)
-#        self.lossfn = nn.CrossEntropyLoss
-        self.lossfn = nn.CrossEntropyLoss()
+        self.lossfn = nn.CrossEntropyLoss
 
     def _forward(self, e):
         o = e.narrow(1, 1, e.size(1) - 1)
         s = e.narrow(1, 0, 1).expand_as(o)
-#        dists = self.dist()(s, o).squeeze(-1)
-        dists = self.dist().apply(s, o).squeeze(-1)
+        dists = self.dist()(s, o).squeeze(-1)
         return -dists
 
-#    def loss(self, preds, targets, weight=None, size_average=True):
-    def loss(self, preds, targets):
-#        self.lossfn = nn.CrossEntropyLoss
-#        lossfn = self.lossfn(size_average=size_average, weight=weight)
-#        return lossfn(preds, targets)
-        return self.lossfn(preds, targets)
+    def loss(self, preds, targets, weight=None, size_average=True):
+        self.lossfn = nn.CrossEntropyLoss
+        lossfn = self.lossfn(size_average=size_average, weight=weight)
+        return lossfn(preds, targets)
 
 
 class GraphDataset(Dataset):
