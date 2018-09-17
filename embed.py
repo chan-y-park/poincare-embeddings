@@ -147,8 +147,6 @@ if __name__ == '__main__':
 
     # initialize model and data
     model, data, model_name, conf = model.SNGraphDataset.initialize(distfn, opt, idx, objects)
-    import pdb
-    pdb.set_trace()
 
     # Build config string for log
     conf = [
