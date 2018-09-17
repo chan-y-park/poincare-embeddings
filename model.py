@@ -32,71 +32,35 @@ class Arcosh(Function):
         return z
 
 
-#class PoincareDistance(Function):
-#    boundary = 1 - eps
-#
-#    def grad(self, x, v, sqnormx, sqnormv, sqdist):
-#        alpha = (1 - sqnormx)
-#        beta = (1 - sqnormv)
-#        z = 1 + 2 * sqdist / (alpha * beta)
-#        a = ((sqnormv - 2 * th.sum(x * v, dim=-1) + 1) / th.pow(alpha, 2)).unsqueeze(-1).expand_as(x)
-#        a = a * x - v / alpha.unsqueeze(-1).expand_as(v)
-#        z = th.sqrt(th.pow(z, 2) - 1)
-#        z = th.clamp(z * beta, min=eps).unsqueeze(-1)
-#        return 4 * a / z.expand_as(x)
-#
-#    def forward(self, u, v):
-#        self.save_for_backward(u, v)
-#        self.squnorm = th.clamp(th.sum(u * u, dim=-1), 0, PoincareDistance.boundary)
-#        self.sqvnorm = th.clamp(th.sum(v * v, dim=-1), 0, PoincareDistance.boundary)
-#        self.sqdist = th.sum(th.pow(u - v, 2), dim=-1)
-#        x = self.sqdist / ((1 - self.squnorm) * (1 - self.sqvnorm)) * 2 + 1
-#        # arcosh
-#        z = th.sqrt(th.pow(x, 2) - 1)
-#        return th.log(x + z)
-#
-#    def backward(self, g):
-#        u, v = self.saved_tensors
-#        g = g.unsqueeze(-1)
-#        gu = self.grad(u, v, self.squnorm, self.sqvnorm, self.sqdist)
-#        gv = self.grad(v, u, self.sqvnorm, self.squnorm, self.sqdist)
-#        return g.expand_as(gu) * gu, g.expand_as(gv) * gv
+class PoincareDistance(Function):
+    boundary = 1 - eps
 
+    def grad(self, x, v, sqnormx, sqnormv, sqdist):
+        alpha = (1 - sqnormx)
+        beta = (1 - sqnormv)
+        z = 1 + 2 * sqdist / (alpha * beta)
+        a = ((sqnormv - 2 * th.sum(x * v, dim=-1) + 1) / th.pow(alpha, 2)).unsqueeze(-1).expand_as(x)
+        a = a * x - v / alpha.unsqueeze(-1).expand_as(v)
+        z = th.sqrt(th.pow(z, 2) - 1)
+        z = th.clamp(z * beta, min=eps).unsqueeze(-1)
+        return 4 * a / z.expand_as(x)
 
-class PoincareDistance(th.autograd.Function):
-    @staticmethod
-    def forward(ctx, u, v):
-        eps = 1e-5
-        boundary = 1 - eps
-        def grad(t, x, sqtnorm, sqxnorm, sqdist):
-            alpha = (1 - sqtnorm)
-            beta = (1 - sqxnorm)
-            gamma = 1 + 2 * sqdist / (alpha * beta)
-            a = ((sqxnorm - 2 * th.sum(t * x, dim=-1) + 1)
-                 / th.pow(alpha, 2)).unsqueeze(-1).expand_as(t)
-            b = a * t - x / alpha.unsqueeze(-1).expand_as(x)
-            c = th.sqrt(th.pow(gamma, 2) - 1)
-            d = th.clamp(c * beta, min=eps).unsqueeze(-1)
-            return 4 * b / d.expand_as(t)
-        ctx.grad = grad
-        ctx.save_for_backward(u, v)
-        ctx.squnorm = th.clamp(th.sum(u * u, dim=-1), 0, boundary)
-        ctx.sqvnorm = th.clamp(th.sum(v * v, dim=-1), 0, boundary)
-        ctx.sqdist = th.sum(th.pow(u - v, 2), dim=-1)
-        x = ctx.sqdist / ((1 - ctx.squnorm) * (1 - ctx.sqvnorm)) * 2 + 1
+    def forward(self, u, v):
+        self.save_for_backward(u, v)
+        self.squnorm = th.clamp(th.sum(u * u, dim=-1), 0, PoincareDistance.boundary)
+        self.sqvnorm = th.clamp(th.sum(v * v, dim=-1), 0, PoincareDistance.boundary)
+        self.sqdist = th.sum(th.pow(u - v, 2), dim=-1)
+        x = self.sqdist / ((1 - self.squnorm) * (1 - self.sqvnorm)) * 2 + 1
+        # arcosh
         z = th.sqrt(th.pow(x, 2) - 1)
-        # NOTE: arcosh(x) = log(x + \sqrt(x^2 - 1))
         return th.log(x + z)
 
-    @staticmethod
-    def backward(ctx, g):
-        u, v = ctx.saved_tensors
+    def backward(self, g):
+        u, v = self.saved_tensors
         g = g.unsqueeze(-1)
-        gu = ctx.grad(u, v, ctx.squnorm, ctx.sqvnorm, ctx.sqdist)
-        gv = ctx.grad(v, u, ctx.sqvnorm, ctx.squnorm, ctx.sqdist)
+        gu = self.grad(u, v, self.squnorm, self.sqvnorm, self.sqdist)
+        gv = self.grad(v, u, self.sqvnorm, self.squnorm, self.sqdist)
         return g.expand_as(gu) * gu, g.expand_as(gv) * gv
-
-
 
 
 class EuclideanDistance(nn.Module):
